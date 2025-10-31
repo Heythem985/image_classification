@@ -1,0 +1,47 @@
+import os 
+from img2vec_pytorch import Img2Vec
+from sklearn.ensemble import RandomForestClassifier
+from  PIL import Image 
+from sklearn.metrics import accuracy_score 
+import pickle
+
+
+
+img2vec = Img2Vec ()
+
+# data preparation 
+data_dir = './dataset2'
+train_data_dir = os.path.join(data_dir,'train')
+eval_data_dir = os.path.join(data_dir,'eval')
+data = {}
+for j, dir_ in enumerate([train_data_dir, eval_data_dir]):
+
+    labels = []
+    features = []
+
+    for category in os.listdir(dir_) :
+        for img_path in os.listdir(os.path.join(dir_,category)) :
+    
+            img_path = os.path.join(dir_,category,img_path)
+            img = Image.open(img_path).convert('RGB')
+            img_vec= img2vec.get_vec(img)
+            features.append(img_vec)
+            labels.append(category)
+    data[['training_data', 'validation_data'][j]] = features
+    data[['training_labels', 'validation_labels'][j]] = labels
+ 
+# train model 
+model = RandomForestClassifier()
+model.fit(data['training_data'],data['training_labels'])
+
+# test performance 
+predicted_labels=model.predict(data['validation_data'])
+
+accuracy = accuracy_score(data['validation_labels'],predicted_labels)
+print(accuracy)
+
+
+# save the model 
+with open('./model.p', 'wb') as f:
+    pickle.dump(model, f)
+    f.close()
